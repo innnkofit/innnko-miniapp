@@ -460,6 +460,16 @@ function onCTA(){
   if(!d.c){ d.c=1; saveDay(n); try{ tg&&tg.HapticFeedback&&tg.HapticFeedback.notificationOccurred('success'); }catch(e){} renderDay(); }
   openStory(n);
 }
+function shareDay(n){
+  var d=getDay(n);
+  var hs=S.cfg.habits.filter(function(x){ return d.h.indexOf(x.id)>=0; }).map(function(x){ return x.name; });
+  var ts=(d.t||[]).filter(function(t){ return t.x&&t.x.trim(); }).map(function(t){ return (t.d?'✓ ':'✗ ')+t.x.trim(); });
+  var text='ИТОГ ДНЯ '+n+' · '+fmtShort(dateOfDay(n))+'\nЗакрыт: '+(d.c?'да':'нет')+'\nПривычки: '+(hs.length?hs.join('; '):'—')+'\nТройка: '+(ts.length?ts.join('; '):'—');
+  var link='https://innnkofit.github.io/innnko-miniapp/';
+  var url='https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent(text);
+  try{ if(tg&&tg.openTelegramLink){ tg.openTelegramLink(url); return; } }catch(e){}
+  window.open(url,'_blank');
+}
 function openStory(n){
   var d=getDay(n), s=dayStats(n), streak=streakAt(n), pct=Math.round(n/cycleDays()*100), st=S.cfg.settings;
   var dots=S.cfg.habits.map(function(x){ return '<i class="'+(d.h.indexOf(x.id)>=0?'on':'')+'" style="--c:'+goalById(x.goal).color+'"></i>'; }).join('');
@@ -473,9 +483,11 @@ function openStory(n){
     '<div class="storyDots">'+dots+'</div>'+
     '<div class="storySig">'+esc(st.signature||'')+'</div></div></div>'+
     '<div class="storyHint">📸 Сделай скриншот и неси в сторис</div>'+
-    '<div class="storyBtns"><button id="reopen">Открыть день снова</button><button id="stClose">Готово</button></div>';
+    '<div class="storyBtns"><button id="reopen">Открыть день снова</button><button id="stClose">Готово</button></div>'+
+    '<div class="storyBtns"><button id="stSend">Отправить итог дня боту</button></div>';
   $('story').classList.add('open');
   $('stClose').onclick=function(){ $('story').classList.remove('open'); };
+  $('stSend').onclick=function(){ shareDay(n); };
   $('reopen').onclick=function(){ d.c=0; saveDay(n); $('story').classList.remove('open'); renderDay(); toast('День снова открыт'); };
 }
 
