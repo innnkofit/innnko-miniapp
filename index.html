@@ -460,15 +460,27 @@ function onCTA(){
   if(!d.c){ d.c=1; saveDay(n); try{ tg&&tg.HapticFeedback&&tg.HapticFeedback.notificationOccurred('success'); }catch(e){} renderDay(); }
   openStory(n);
 }
-function shareDay(n){
+function dayText(n){
   var d=getDay(n);
   var hs=S.cfg.habits.filter(function(x){ return d.h.indexOf(x.id)>=0; }).map(function(x){ return x.name; });
   var ts=(d.t||[]).filter(function(t){ return t.x&&t.x.trim(); }).map(function(t){ return (t.d?'✓ ':'✗ ')+t.x.trim(); });
-  var text='ИТОГ ДНЯ '+n+' · '+fmtShort(dateOfDay(n))+'\nЗакрыт: '+(d.c?'да':'нет')+'\nПривычки: '+(hs.length?hs.join('; '):'—')+'\nТройка: '+(ts.length?ts.join('; '):'—');
-  var link='https://innnkofit.github.io/innnko-miniapp/';
-  var url='https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent(text);
-  try{ if(tg&&tg.openTelegramLink){ tg.openTelegramLink(url); return; } }catch(e){}
-  window.open(url,'_blank');
+  return 'ИТОГ ДНЯ '+n+' · '+fmtShort(dateOfDay(n))+'\nЗакрыт: '+(d.c?'да':'нет')+'\nПривычки: '+(hs.length?hs.join('; '):'—')+'\nТройка: '+(ts.length?ts.join('; '):'—');
+}
+function copyDay(n){
+  var text=dayText(n);
+  function done(){
+    toast('Скопировано — вставь в чат с ботом');
+    try{ if(tg&&tg.openTelegramLink){ setTimeout(function(){ tg.openTelegramLink('https://t.me/assistentinnnko_bot'); },700); } }catch(e){}
+  }
+  function fb(){
+    var ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;left:0;top:0;opacity:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    var ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+    if(ok) done(); else window.prompt('Скопируй текст и отправь боту:',text);
+  }
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done,fb); return; } }catch(e){}
+  fb();
 }
 function openStory(n){
   var d=getDay(n), s=dayStats(n), streak=streakAt(n), pct=Math.round(n/cycleDays()*100), st=S.cfg.settings;
@@ -484,10 +496,10 @@ function openStory(n){
     '<div class="storySig">'+esc(st.signature||'')+'</div></div></div>'+
     '<div class="storyHint">📸 Сделай скриншот и неси в сторис</div>'+
     '<div class="storyBtns"><button id="reopen">Открыть день снова</button><button id="stClose">Готово</button></div>'+
-    '<div class="storyBtns"><button id="stSend">Отправить итог дня боту</button></div>';
+    '<div class="storyBtns"><button id="stSend">Скопировать итог и открыть чат с ботом</button></div>';
   $('story').classList.add('open');
   $('stClose').onclick=function(){ $('story').classList.remove('open'); };
-  $('stSend').onclick=function(){ shareDay(n); };
+  $('stSend').onclick=function(){ copyDay(n); };
   $('reopen').onclick=function(){ d.c=0; saveDay(n); $('story').classList.remove('open'); renderDay(); toast('День снова открыт'); };
 }
 
